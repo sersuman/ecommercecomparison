@@ -1,11 +1,14 @@
-from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from core.serializers import UserSerializer
+from core.serializers import UserSerializer,ItemSerializer
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from .models import Item
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 class UserCreate(APIView):
     def post(self, request, format='json'):
@@ -20,9 +23,23 @@ class UserCreate(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class HelloView(APIView):
-    permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
-        content = {'message': 'Hello, World!'}
-        return Response(content)
+
+@api_view(["POST"])
+@csrf_exempt
+@permission_classes([IsAuthenticated])
+def add_item(request):
+    payload = request.data
+    user = request.user
+    try:
+
+        item = Item.objects.create(
+            name=payload["name"],
+            user=user
+        )
+        serializer = ItemSerializer(item)
+        return JsonResponse({'item': serializer.data}, safe=False, status=status.HTTP_201_CREATED)
+    except ObjectDoesNotExist as e:
+        return JsonResponse({'error': str(e)}, safe=False, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+        return JsonResponse({'error': 'Something terrible went wrong'}, safe=False, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
