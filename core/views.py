@@ -43,3 +43,14 @@ def add_item(request):
         return JsonResponse({'error': str(e)}, safe=False, status=status.HTTP_404_NOT_FOUND)
     except Exception:
         return JsonResponse({'error': 'Something terrible went wrong'}, safe=False, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@csrf_exempt
+# @permission_classes([IsAuthenticated])
+def get_item(request):
+    user = request.user.id
+    items = Item.objects.filter(user=user)
+    serializer = ItemSerializer(items, many=True)
+    return JsonResponse({'items': serializer.data}, safe=False, status=status.HTTP_200_OK)
+
