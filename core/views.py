@@ -63,46 +63,47 @@ def get_content(request):
     soup = BeautifulSoup(source, 'lxml')
     data = {}
     proudct = []
-    # for item in soup.findAll("div", {"class" : "product-box"}):
-    #     name = item.div.div.text
-    #     price = item.div.p.span.text
-    #     image = item.img['data-src']
-    #     data = {
-    #         "name": name,
-    #         "price": price,
-    #         "image": image
-    #     }
-    #     proudct.append(data)
-    #
-    #
-    #
-    # source2 = requests.get('https://smartdoko.com/category/Monitorss').text
-    # soup = BeautifulSoup(source2, 'lxml')
-    # for item in soup.findAll("div", {"class": "single-products"}):
-    #     name = item.div.a.img['alt']
-    #     price = item.div.h2.text
-    #     image = item.div.a.img['src']
-    #     data = {
-    #         "name": name,
-    #         "price": price,
-    #         "image": image
-    #     }
-    #     proudct.append(data)
+    for item in soup.findAll("div", {"class" : "product-box"}):
+        name = item.div.div.text
+        price = item.div.p.span.text
+        image = item.img['data-src']
+        data = {
+            "name": name,
+            "price": price,
+            "image": image
+        }
+        proudct.append(data)
 
 
 
-
-
-    source2 = requests.get('https://thulo.com/smartphones/').text
+    source2 = requests.get('https://smartdoko.com/category/Monitorss').text
     soup = BeautifulSoup(source2, 'lxml')
+    for item in soup.findAll("div", {"class": "single-products"}):
+        name = item.div.a.img['alt']
+        price = item.div.h2.text
+        image = item.div.a.img['src']
+        data = {
+            "name": name,
+            "price": price,
+            "image": image
+        }
+        proudct.append(data)
+
+
+
+
+
+    source3 = requests.get('https://thulo.com/smartphones/').text
+    soup = BeautifulSoup(source3, 'lxml')
     for item in soup.findAll("div", {"class": "ty-column4"}):
         name = item.find('div', {'class':'ty-grid-list__item-name'})
+        price = item.find('span', {'class':'ty-price'}).text
+        price = price.split(' ')[1]
         name = name.a.text
-        price = item.div.form.div
         image = item.div.form.div.a.img['src']
         data = {
             "name": name,
-            "price": 'price',
+            "price": price,
             "image": image
         }
         proudct.append(data)
