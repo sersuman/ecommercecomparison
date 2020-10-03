@@ -18,11 +18,7 @@ class UserCreate(APIView):
         if serializer.is_valid():
             user = serializer.save()
             if user:
-                token = Token.objects.create(user=user)
-                json = serializer.data
-                json['token'] = token.key
-                return Response(json, status=status.HTTP_201_CREATED)
-
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -49,15 +45,17 @@ def add_item(request):
 
 @api_view(["GET"])
 @csrf_exempt
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def get_item(request):
     user = request.user.id
     items = Item.objects.filter(user=user).values('name')
     serializer = ItemSerializer(items, many=True)
     return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
 
+
 @api_view(["GET"])
 @csrf_exempt
+@permission_classes([IsAuthenticated])
 def get_content(request):
     user = request.user.id
     a = Item.objects.filter(user=user).values_list('name')
