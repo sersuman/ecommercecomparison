@@ -48,66 +48,79 @@ def add_item(request):
 @permission_classes([IsAuthenticated])
 def get_item(request):
     user = request.user.id
-    items = Item.objects.filter(user=user).values('name')
-    serializer = ItemSerializer(items, many=True)
-    return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
-
+    try:
+        items = Item.objects.filter(user=user).values('name')
+        serializer = ItemSerializer(items, many=True)
+        return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+    except ObjectDoesNotExist as e:
+        return JsonResponse({'error': str(e)}, safe=False, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+        return JsonResponse({'error': 'Something terrible went wrong'}, safe=False,
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(["GET"])
 @csrf_exempt
 @permission_classes([IsAuthenticated])
 def get_content(request):
     user = request.user.id
-    a = Item.objects.filter(user=user).values_list('name')
-    user_subscribed_item = [item for sublist in a for item in sublist]
-    display = {'mobile':['mobiles','Mobile','smartphones'],'tv':['led-tv','televisions','led-tvs'],'drone':['drones-and-accessories','Drones-Gimbles','drones']}
-    result = {item: value for (item, value) in display.items() if item in user_subscribed_item}
+    try:
+
+        item = Item.objects.filter(user=user).values_list('name')
+        user_subscribed_item = [i for sublist in item for i in sublist]
+
+        all_items = {'mobile':['mobiles','Mobile','smartphones'],'tv':['led-tv','televisions','led-tvs'],'drone':['drones-and-accessories','Drones-Gimbles','drones']}
+        display_items = {item: value for (item, value) in all_items.items() if item in user_subscribed_item}
 
 
-    proudct = []
-    data = {}
+        proudct = []
+        data = {}
 
-    for key, value in result.items():
-        source = requests.get('https://www.okdam.com/category/' + value[0]).text
-        source2 = requests.get('https://smartdoko.com/products/' + value[1]).text
-        source3 = requests.get('https://thulo.com/' + value[2]).text
+        for key, value in display_items.items():
+            source = requests.get('https://www.okdam.com/category/' + value[0]).text
+            source2 = requests.get('https://smartdoko.com/products/' + value[1]).text
+            source3 = requests.get('https://thulo.com/' + value[2]).text
 
-        soup = BeautifulSoup(source, 'lxml')
-        soup2 = BeautifulSoup(source2, 'lxml')
-        soup3 = BeautifulSoup(source3, 'lxml')
+            soup = BeautifulSoup(source, 'lxml')
+            soup2 = BeautifulSoup(source2, 'lxml')
+            soup3 = BeautifulSoup(source3, 'lxml')
 
-        for item in soup.findAll("div", {"class": "product-box"}):
-            name = item.div.div.text
-            price = item.div.p.span.text
-            image = item.img['data-src']
-            data = {
-                "name": name,
-                "price": price,
-                "image": image
-            }
-            proudct.append(data)
+            for item in soup.findAll("div", {"class": "product-box"}):
+                name = item.div.div.text
+                price = item.div.p.span.text
+                image = item.img['data-src']
+                data = {
+                    "name": name,
+                    "price": price,
+                    "image": image
+                }
+                proudct.append(data)
 
-        for item in soup2.findAll("div", {"class": "single-products"}):
-            name = item.div.a.img['alt']
-            price = item.div.h2.text
-            image = item.div.a.img['src']
-            data = {
-                "name": name,
-                "price": price,
-                "image": image
-            }
-            proudct.append(data)
+            for item in soup2.findAll("div", {"class": "single-products"}):
+                name = item.div.a.img['alt']
+                price = item.div.h2.text
+                image = item.div.a.img['src']
+                data = {
+                    "name": name,
+                    "price": price,
+                    "image": image
+                }
+                proudct.append(data)
 
-        for item in soup3.findAll("div", {"class": "ty-column4"}):
-            name = item.find('div', {'class':'ty-grid-list__item-name'})
-            price = item.find('span', {'class':'ty-price'}).text
-            price = price.split(' ')[1]
-            name = name.a.text
-            image = item.div.form.div.a.img['src']
-            data = {
-                "name": name,
-                "price": price,
-                "image": image
-            }
-            proudct.append(data)
-    return JsonResponse(proudct, safe=False, status=status.HTTP_201_CREATED)
+            for item in soup3.findAll("div", {"class": "ty-column4"}):
+                name = item.find('div', {'class':'ty-grid-list__item-name'})
+                price = item.find('span', {'class':'ty-price'}).text
+                price = price.split(' ')[1]
+                name = name.a.text
+                image = item.div.form.div.a.img['src']
+                data = {
+                    "name": name,
+                    "price": price,
+                    "image": image
+                }
+                proudct.append(data)
+        return JsonResponse(proudct, safe=False, status=status.HTTP_201_CREATED)
+    except ObjectDoesNotExist as e:
+        return JsonResponse({'error': str(e)}, safe=False, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+        return JsonResponse({'error': 'Something terrible went wrong'}, safe=False,
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
